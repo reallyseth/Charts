@@ -33,6 +33,11 @@ public protocol ChartViewDelegate
     
     // Callbacks when the chart is moved / translated via drag gesture.
     optional func chartTranslated(chartView: ChartViewBase, dX: CGFloat, dY: CGFloat)
+    
+    // Callbacks when the chart is moved / translated via drag gesture.
+    optional func chartCalloutTapped(chartView: ChartViewBase, callout: Callout)
+    
+    optional func chartHideDataMarker(chartView: ChartViewBase)
 }
 
 public class ChartViewBase: NSUIView, ChartDataProvider, AnimatorDelegate
@@ -46,6 +51,9 @@ public class ChartViewBase: NSUIView, ChartDataProvider, AnimatorDelegate
     {
         return _xAxis
     }
+    
+    /// MAARK
+    public var disableHighlighting : Bool = false
     
     /// The default IValueFormatter that has been determined by the chart considering the provided minimum and maximum values.
     internal var _defaultValueFormatter: IValueFormatter? = DefaultValueFormatter(decimals: 0)
@@ -81,6 +89,9 @@ public class ChartViewBase: NSUIView, ChartDataProvider, AnimatorDelegate
     
     /// description text that appears in the bottom right corner of the chart
     public var descriptionText = "Description"
+    
+    /// MAARK
+    public var multipleMarkersEnabled: Bool = false
     
     /// if true, units are drawn next to the values in the chart
     internal var _drawUnitInChart = false
@@ -125,6 +136,7 @@ public class ChartViewBase: NSUIView, ChartDataProvider, AnimatorDelegate
     /// `true` if drawing the marker is enabled when tapping on values
     /// (use the `marker` property to specify a marker)
     public var drawMarkers = true
+    public var areaMarkers = false
     
     /// - returns: `true` if drawing the marker is enabled when tapping on values
     /// (use the `marker` property to specify a marker)
@@ -132,6 +144,12 @@ public class ChartViewBase: NSUIView, ChartDataProvider, AnimatorDelegate
     
     /// The marker that is displayed when a value is clicked on the chart
     public var marker: IMarker?
+    
+    /// if set to true, the marker is drawn
+    public var drawCallout = true
+    
+    /// the view that represents the callout
+    public var callouts: [Callout]?
     
     private var _interceptTouchEvents = false
     
@@ -438,7 +456,12 @@ public class ChartViewBase: NSUIView, ChartDataProvider, AnimatorDelegate
     /// - returns: `true` if there are values to highlight, `false` ifthere are no values to highlight.
     public func valuesToHighlight() -> Bool
     {
-        return _indicesToHighlight.count > 0
+        // MAARK
+        if !disableHighlighting {
+            return _indicesToHighlight.count > 0
+        }
+        
+        return false
     }
 
     /// Highlights the values at the given indices in the given DataSets. Provide
@@ -513,27 +536,66 @@ public class ChartViewBase: NSUIView, ChartDataProvider, AnimatorDelegate
         {
             // set the indices to highlight
             entry = _data?.entryForHighlight(h!)
-            if (entry == nil)
-            {
-                h = nil
+            
+            if multipleMarkersEnabled {
+                
                 _indicesToHighlight.removeAll(keepCapacity: false)
+                
+                guard let data = _data else { return }
+                
+                for i in 0...data.dataSets.count - 1 {
+                    let dSet = data.dataSets[i]
+                    
+                    // MAARK - not sure if this is correct
+                    // TODO: test this out
+                    if let val = dSet.entryForXValue(h!.x) {
+                        h = Highlight(x: h!.x, y: val.y, xPx: CGFloat.NaN, yPx: CGFloat.NaN, dataIndex: -1, dataSetIndex: i, stackIndex: -1, axis: YAxis.AxisDependency.Left)
+                        _indicesToHighlight.append(h!)
+                    }
+                }
+                
+                if let hi = _indicesToHighlight.first {
+                    if (callDelegate && delegate != nil)
+                    {
+                        if (h == nil)
+                        {
+                            delegate?.chartValueNothingSelected?(self)
+                        } else  {
+                            delegate?.chartValueSelected?(self, entry: entry!, highlight: h!)
+                        }
+                    }
+                }
+            } else {
+                
+                if (entry == nil)
+                {
+                    h = nil
+                    // MAARK disabled below because it caused unwanted removal of hitpointer marker
+                    // No known side effects, but keep watch
+                    //_indicesToHighlight.removeAll(keepCapacity: false)
+                }
+                else
+                {
+                    if self is BarLineChartViewBase &&
+                        (self as! BarLineChartViewBase).isHighlightFullBarEnabled {
+                        h = Highlight(x: h!.x, y: Double.NaN, xPx: CGFloat.NaN, yPx: CGFloat.NaN, dataIndex: -1, dataSetIndex: -1, stackIndex: -1, axis: YAxis.AxisDependency.Left)
+                    }
+                    
+                    _indicesToHighlight = [h!]
+                }
             }
-            else
+            
+            if (callDelegate && delegate != nil)
             {
-                _indicesToHighlight = [h!]
-            }
-        }
-        
-        if (callDelegate && delegate != nil)
-        {
-            if (h == nil)
-            {
-                delegate!.chartValueNothingSelected?(self)
-            }
-            else
-            {
-                // notify the listener
-                delegate!.chartValueSelected?(self, entry: entry!, highlight: h!)
+                if (h == nil)
+                {
+                    delegate!.chartValueNothingSelected?(self)
+                }
+                else
+                {
+                    // notify the listener
+                    delegate!.chartValueSelected?(self, entry: entry!, highlight: h!)
+                }
             }
         }
         
@@ -558,6 +620,38 @@ public class ChartViewBase: NSUIView, ChartDataProvider, AnimatorDelegate
     /// The last value that was highlighted via touch.
     public var lastHighlighted: Highlight?
   
+    // MARK: Callouts
+    
+    internal func drawCallouts(context context: CGContext)
+    {
+        if (callouts == nil || !drawCallout)
+        {
+            return
+        }
+        
+        for callout in callouts! {
+            var pos = getCalloutPosition(callout)
+            let offset: CGFloat = 22
+            if !_viewPortHandler.isInBoundsLeft(pos.x - (offset - 10)) {
+                pos.x = offset - 10
+            }
+            
+            if !_viewPortHandler.isInBoundsRight(pos.x + offset) {
+                pos.x = _viewPortHandler.contentRect.origin.x + _viewPortHandler.contentRect.size.width - offset
+            }
+            
+            if !_viewPortHandler.isInBoundsBottom(pos.y, offset: offset) {
+                pos.y = _viewPortHandler.chartHeight - offset - 20
+            }
+            
+            if !_viewPortHandler.isInBoundsTop(pos.y) {
+                pos.y = 0
+            }
+            
+            callout.draw(context: context, point: pos)
+        }
+    }
+    
     // MARK: - Markers
 
     /// draws all MarkerViews on the highlighted positions
@@ -596,9 +690,47 @@ public class ChartViewBase: NSUIView, ChartDataProvider, AnimatorDelegate
             // callbacks to update the content
             marker.refreshContent(entry: e, highlight: highlight)
             
-            // draw the marker
-            marker.draw(context: context, point: pos)
+            if areaMarkers == true {
+                drawAreaMakerInContext(context, highlight: highlight, pos: pos)
+            } else {
+                
+                // draw the marker
+                marker.draw(context: context, point: pos)
+            }
         }
+    }
+    
+    internal func drawAreaMakerInContext(context: CGContext, highlight: Highlight, pos: CGPoint) {
+        
+        guard let dataSet = _data?.dataSets[highlight.dataSetIndex] as? LineChartDataSet else { return }
+        
+        guard let setColor = dataSet.colors.first else { return }
+        
+        let formsize: CGFloat = 14
+        
+        let formColor = setColor.colorWithAlphaComponent(0.5)
+        
+        let frame = CGRect(x: pos.x - (formsize / 2), y: pos.y - (formsize / 2), width: formsize, height: formsize)
+        
+        CGContextSaveGState(context)
+        
+        defer { CGContextRestoreGState(context) }
+        
+        CGContextSetLineWidth(context, 4.0)
+        CGContextSetStrokeColorWithColor(context, UIColor.whiteColor().CGColor)
+        CGContextAddEllipseInRect(context, frame)
+        CGContextStrokePath(context)
+        CGContextSetFillColorWithColor(context, formColor.CGColor)
+        CGContextFillEllipseInRect(context, frame)
+    }
+    
+    public func renderCallouts(context: CGContext, callout: Callout) {
+        fatalError("renderCallouts() cannot be called on ChartViewBase")
+    }
+    
+    /// - returns: the actual position in pixels of the Callout
+    public func getCalloutPosition(callout: Callout) -> CGPoint {
+        return callout.valuePoint
     }
     
     /// - returns: The actual position in pixels of the MarkerView for the given Entry in the given DataSet.
