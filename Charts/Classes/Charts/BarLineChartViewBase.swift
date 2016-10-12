@@ -26,6 +26,9 @@ public class BarLineChartViewBase: ChartViewBase, BarLineScatterCandleBubbleChar
     /// flag that indicates if auto scaling on the y axis is enabled
     private var _autoScaleMinMaxEnabled = false
     
+    private var _disablePinch = false
+    private var _disablePan = false
+    
     private var _pinchZoomEnabled = false
     private var _doubleTapToZoomEnabled = true
     private var _dragEnabled = true
@@ -67,6 +70,7 @@ public class BarLineChartViewBase: ChartViewBase, BarLineScatterCandleBubbleChar
     internal var _xAxisRenderer: XAxisRenderer!
     
     internal var _tapGestureRecognizer: NSUITapGestureRecognizer!
+    internal var _singleTapGestureRecognizer: NSUITapGestureRecognizer!
     internal var _doubleTapGestureRecognizer: NSUITapGestureRecognizer!
     #if !os(tvOS)
     internal var _pinchGestureRecognizer: NSUIPinchGestureRecognizer!
@@ -109,6 +113,8 @@ public class BarLineChartViewBase: ChartViewBase, BarLineScatterCandleBubbleChar
         self.highlighter = ChartHighlighter(chart: self)
         
         _tapGestureRecognizer = NSUITapGestureRecognizer(target: self, action: #selector(tapGestureRecognized(_:)))
+        _tapGestureRecognizer.nsuiNumberOfTapsRequired = 2
+        _singleTapGestureRecognizer = NSUITapGestureRecognizer(target: self, action: #selector(singleTapGestureRecognized(_:)))
         _doubleTapGestureRecognizer = NSUITapGestureRecognizer(target: self, action: #selector(doubleTapGestureRecognized(_:)))
         _doubleTapGestureRecognizer.nsuiNumberOfTapsRequired = 2
         _panGestureRecognizer = NSUIPanGestureRecognizer(target: self, action: #selector(panGestureRecognized(_:)))
@@ -116,6 +122,7 @@ public class BarLineChartViewBase: ChartViewBase, BarLineScatterCandleBubbleChar
         _panGestureRecognizer.delegate = self
         
         self.addGestureRecognizer(_tapGestureRecognizer)
+        self.addGestureRecognizer(_singleTapGestureRecognizer)
         self.addGestureRecognizer(_doubleTapGestureRecognizer)
         self.addGestureRecognizer(_panGestureRecognizer)
         
@@ -194,6 +201,7 @@ public class BarLineChartViewBase: ChartViewBase, BarLineScatterCandleBubbleChar
         
         // The renderers are responsible for clipping, to account for line-width center etc.
         _xAxisRenderer?.renderGridLines(context: context)
+        _xAxisRenderer?.renderGridAreas(context: context)
         _leftYAxisRenderer?.renderGridLines(context: context)
         _rightYAxisRenderer?.renderGridLines(context: context)
         
@@ -247,6 +255,8 @@ public class BarLineChartViewBase: ChartViewBase, BarLineScatterCandleBubbleChar
         _legendRenderer.renderLegend(context: context)
 
         drawMarkers(context: context)
+        
+        drawCallouts(context: context)
 
         drawDescription(context: context)
     }
@@ -288,6 +298,11 @@ public class BarLineChartViewBase: ChartViewBase, BarLineScatterCandleBubbleChar
         renderer?.initBuffers()
         
         calcMinMax()
+        
+        if _rightAxis.useDataSetLabelForAxisLabel
+        {
+            _rightAxis.dataSets = _data?.dataSets
+        }
         
         _leftYAxisRenderer?.computeAxis(min: _leftAxis._axisMinimum, max: _leftAxis._axisMaximum, inverted: _leftAxis.isInverted)
         _rightYAxisRenderer?.computeAxis(min: _rightAxis._axisMinimum, max: _rightAxis._axisMaximum, inverted: _rightAxis.isInverted)
@@ -446,6 +461,26 @@ public class BarLineChartViewBase: ChartViewBase, BarLineScatterCandleBubbleChar
         prepareValuePxMatrix()
     }
     
+    public override func getCalloutPosition(callout: ChartCallout) -> CGPoint
+    {
+        var pt = callout.position
+        
+        if scaleX == 1 && scaleY == 1 && _viewPortHandler.transX == 0 && _viewPortHandler.transY == 0 {
+            getTransformer(.Left).pixelToValue(&pt)
+            
+            callout.valuePoint = pt
+        } else {
+            pt = callout.valuePoint
+        }
+        
+        getTransformer(.Left).pointValueToPixel(&pt)
+        
+        let position = CGPoint(x: pt.x, y: pt.y)
+        
+        return position
+        
+    }
+    
     /// draws the grid background
     internal func drawGridBackground(context context: CGContext)
     {
@@ -503,21 +538,75 @@ public class BarLineChartViewBase: ChartViewBase, BarLineScatterCandleBubbleChar
             return
         }
         
+        if (recognizer.state == NSUIGestureRecognizerState.Began)
+        {
+            self.removeGestureRecognizer(_pinchGestureRecognizer)
+        }
+        
         if (recognizer.state == NSUIGestureRecognizerState.Ended)
         {
+            self.addGestureRecognizer(_pinchGestureRecognizer)
+            
             if !self.isHighLightPerTapEnabled { return }
             
             let h = getHighlightByTouchPoint(recognizer.locationInView(self))
             
-            if (h === nil || h!.isEqual(self.lastHighlighted))
+            
+            if let safeCallouts = callouts {
+                let point = recognizer.locationInView(self)
+                for callout in safeCallouts {
+                    guard let rect = callout.rect else { continue }
+                    
+                    if CGRectContainsPoint(rect, point)
+                    {
+                        delegate?.chartCalloutTapped?(self, callout: callout)
+                    }
+                }
+            }
+            
+            // MAARK - this prevents the market from disappearing when it
+            // is same as previous
+            if (h === nil /*|| h!.isEqual(self.lastHighlighted)*/)
             {
                 self.highlightValue(highlight: nil, callDelegate: true)
                 self.lastHighlighted = nil
             }
             else
             {
-                self.highlightValue(highlight: h, callDelegate: true)
                 self.lastHighlighted = h
+                self.highlightValue(highlight: h, callDelegate: true)
+            }
+        }
+    }
+    
+    @objc private func singleTapGestureRecognized(recognizer: NSUITapGestureRecognizer)
+    {
+        
+        // Mkdebug
+        //print("singleTapGestureRecognized")
+        
+        
+        stopDeceleration()
+        
+        if (recognizer.state == NSUIGestureRecognizerState.Ended)
+        {
+            if callouts != nil {
+                let point = recognizer.locationInView(self)
+                
+                for callout in callouts!
+                {
+                    guard let rect = callout.rect else { continue }
+                    
+                    if CGRectContainsPoint(rect, point)
+                    {
+                        if (delegate !== nil)
+                        {
+                            
+                            delegate?.chartCalloutTapped?(self, callout: callout)
+                            break
+                        }
+                    }
+                }
             }
         }
     }
@@ -545,7 +634,9 @@ public class BarLineChartViewBase: ChartViewBase, BarLineScatterCandleBubbleChar
                     location.y = -(self.bounds.size.height - location.y - _viewPortHandler.offsetBottom)
                 }
                 
+                let value = getValueByTouchPoint(pt: _viewPortHandler.contentCenter, axis: YAxis.AxisDependency.Left)
                 self.zoom(scaleX: isScaleXEnabled ? 1.4 : 1.0, scaleY: isScaleYEnabled ? 1.4 : 1.0, x: location.x, y: location.y)
+                self.zoomAndCenterViewAnimated(scaleX: 1, scaleY: 1, xIndex: value.x, yValue: Double(value.y), axis: YAxis.AxisDependency.Left, duration: 0.3)
             }
         }
     }
@@ -553,8 +644,14 @@ public class BarLineChartViewBase: ChartViewBase, BarLineScatterCandleBubbleChar
     #if !os(tvOS)
     @objc private func pinchGestureRecognized(recognizer: NSUIPinchGestureRecognizer)
     {
+        
+        if _disablePinch { return }
+        
         if (recognizer.state == NSUIGestureRecognizerState.Began)
         {
+            // Mkdebug
+            _disablePan = true
+            
             stopDeceleration()
             
             if _data !== nil &&
@@ -593,9 +690,13 @@ public class BarLineChartViewBase: ChartViewBase, BarLineScatterCandleBubbleChar
                 calculateOffsets()
                 setNeedsDisplay()
             }
+            
+            _disablePan = false
+            
         }
         else if (recognizer.state == NSUIGestureRecognizerState.Changed)
         {
+            _disablePan = true
             let isZoomingOut = (recognizer.nsuiScale < 1)
             var canZoomMoreX = isZoomingOut ? _viewPortHandler.canZoomOutMoreX : _viewPortHandler.canZoomInMoreX
             var canZoomMoreY = isZoomingOut ? _viewPortHandler.canZoomOutMoreY : _viewPortHandler.canZoomInMoreY
@@ -632,8 +733,11 @@ public class BarLineChartViewBase: ChartViewBase, BarLineScatterCandleBubbleChar
                     
                     if (delegate !== nil)
                     {
+                        delegate?.chartHideDataMarker?(self)
                         delegate?.chartScaled?(self, scaleX: scaleX, scaleY: scaleY)
                     }
+                    
+                    highlightValue(highlight: nil, callDelegate: true)
                 }
                 
                 recognizer.nsuiScale = 1.0
@@ -644,8 +748,14 @@ public class BarLineChartViewBase: ChartViewBase, BarLineScatterCandleBubbleChar
     
     @objc private func panGestureRecognized(recognizer: NSUIPanGestureRecognizer)
     {
+        if _disablePan { return }
+        
         if (recognizer.state == NSUIGestureRecognizerState.Began && recognizer.nsuiNumberOfTouches() > 0)
         {
+            
+            // MAARK
+            _disablePinch = true
+            
             stopDeceleration()
             
             if _data === nil
@@ -657,7 +767,8 @@ public class BarLineChartViewBase: ChartViewBase, BarLineScatterCandleBubbleChar
             //  * If we're zoomed in, then obviously we have something to drag.
             //  * If we have a drag offset - we always have something to drag
             if self.isDragEnabled &&
-                (!self.hasNoDragOffset || !self.isFullyZoomedOut)
+                (!self.hasNoDragOffset || !self.isFullyZoomedOut) &&
+                (recognizer.nsuiNumberOfTouches() == 1)
             {
                 _isDragging = true
                 
@@ -696,7 +807,10 @@ public class BarLineChartViewBase: ChartViewBase, BarLineScatterCandleBubbleChar
         }
         else if (recognizer.state == NSUIGestureRecognizerState.Changed)
         {
-            if (_isDragging)
+            // MAARK
+            _disablePinch = true
+            
+            if (_isDragging && (recognizer.nsuiNumberOfTouches() == 1))
             {
                 let originalTranslation = recognizer.translationInView(self)
                 let translation = CGPoint(x: originalTranslation.x - _lastPanPoint.x, y: originalTranslation.y - _lastPanPoint.y)
@@ -707,13 +821,15 @@ public class BarLineChartViewBase: ChartViewBase, BarLineScatterCandleBubbleChar
             }
             else if (isHighlightPerDragEnabled)
             {
+                if recognizer.nsuiNumberOfTouches() != 2 { return }
+                
                 let h = getHighlightByTouchPoint(recognizer.locationInView(self))
                 
                 let lastHighlighted = self.lastHighlighted
                 
                 if ((h === nil && lastHighlighted !== nil) ||
                     (h !== nil && lastHighlighted === nil) ||
-                    (h !== nil && lastHighlighted !== nil && !h!.isEqual(lastHighlighted)))
+                    (h !== nil && lastHighlighted !== nil /*&& !h!.isEqual(lastHighlighted)*/)) // MAARK - removes case where highlight is cleared when we don't want it to
                 {
                     self.lastHighlighted = h
                     self.highlightValue(highlight: h, callDelegate: true)
@@ -743,6 +859,11 @@ public class BarLineChartViewBase: ChartViewBase, BarLineScatterCandleBubbleChar
                 _outerScrollView?.scrollEnabled = true
                 _outerScrollView = nil
             }
+            
+            delegate?.chartHideDataMarker?(self)
+            self.highlightValue(highlight: nil, callDelegate: true)
+            _disablePinch = false
+            
         }
     }
     
@@ -831,7 +952,7 @@ public class BarLineChartViewBase: ChartViewBase, BarLineScatterCandleBubbleChar
     {
         if (gestureRecognizer == _panGestureRecognizer)
         {
-            if _data === nil || !_dragEnabled ||
+            if _data === nil || !_dragEnabled || _disablePan ||
                 (self.hasNoDragOffset && self.isFullyZoomedOut && !self.isHighlightPerDragEnabled)
             {
                 return false
@@ -842,7 +963,7 @@ public class BarLineChartViewBase: ChartViewBase, BarLineScatterCandleBubbleChar
             #if !os(tvOS)
                 if (gestureRecognizer == _pinchGestureRecognizer)
                 {
-                    if _data === nil || (!_pinchZoomEnabled && !_scaleXEnabled && !_scaleYEnabled)
+                    if _data === nil || _disablePinch || (!_pinchZoomEnabled && !_scaleXEnabled && !_scaleYEnabled)
                     {
                         return false
                     }
