@@ -13,6 +13,9 @@
 		4F9564351DAE9DDE0001456D /* Callout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F9564341DAE9DDE0001456D /* Callout.swift */; };
 		4F9564361DAE9DDE0001456D /* Callout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F9564341DAE9DDE0001456D /* Callout.swift */; };
 		4F9564371DAE9DDE0001456D /* Callout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F9564341DAE9DDE0001456D /* Callout.swift */; };
+		4F9564391DAEDAA60001456D /* XAxisAreaData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F9564381DAEDAA60001456D /* XAxisAreaData.swift */; };
+		4F95643A1DAEDAA60001456D /* XAxisAreaData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F9564381DAEDAA60001456D /* XAxisAreaData.swift */; };
+		4F95643B1DAEDAA60001456D /* XAxisAreaData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F9564381DAEDAA60001456D /* XAxisAreaData.swift */; };
 		5597263B1BDABBDB00E05E59 /* Charts.h in Headers */ = {isa = PBXBuildFile; fileRef = 5B680D3C1A9D1AD90026A057 /* Charts.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		5597263C1BDABC0500E05E59 /* DefaultAxisValueFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B6654D51BB0A86F00890030 /* DefaultAxisValueFormatter.swift */; };
 		5597263D1BDABC0500E05E59 /* IFillFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B6654D61BB0A86F00890030 /* IFillFormatter.swift */; };
@@ -450,6 +453,7 @@
 		06AEE7AD1BDC3FC6009875AE /* LineChartTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LineChartTests.swift; sourceTree = "<group>"; };
 		06AEE7C11BDC4277009875AE /* FBSnapshotTestCase.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = FBSnapshotTestCase.framework; path = Carthage/Build/iOS/FBSnapshotTestCase.framework; sourceTree = "<group>"; };
 		4F9564341DAE9DDE0001456D /* Callout.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Callout.swift; sourceTree = "<group>"; };
+		4F9564381DAEDAA60001456D /* XAxisAreaData.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = XAxisAreaData.swift; sourceTree = "<group>"; };
 		55E356521ADC63BF00A57971 /* BubbleChartView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BubbleChartView.swift; sourceTree = "<group>"; };
 		55E3565A1ADC63EB00A57971 /* BubbleChartRenderer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BubbleChartRenderer.swift; sourceTree = "<group>"; };
 		5B0032441B6524AD00B6A2FE /* Highlight.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Highlight.swift; sourceTree = "<group>"; };
@@ -946,6 +950,7 @@
 				65F06FAC1BE826010074498D /* IPieChartDataSet.swift */,
 				65F06FAF1BE826090074498D /* IRadarChartDataSet.swift */,
 				65F06F9D1BE814800074498D /* IScatterChartDataSet.swift */,
+				4F9564381DAEDAA60001456D /* XAxisAreaData.swift */,
 			);
 			path = Interfaces;
 			sourceTree = "<group>";
@@ -1229,6 +1234,7 @@
 				5BD8F06D1AB897D500566E05 /* ViewPortHandler.swift in Sources */,
 				5B8FE2B11B68FFF900910C9E /* LineScatterCandleRadarRenderer.swift in Sources */,
 				5B4AC1CD1C58F55B0028D1A6 /* LineRadarRenderer.swift in Sources */,
+				4F9564391DAEDAA60001456D /* XAxisAreaData.swift in Sources */,
 				5BCAA7531C7CB03900F83F3B /* AnimatedMoveViewJob.swift in Sources */,
 				5B613DC81D5466CE000F1E98 /* ChevronDownShapeRenderer.swift in Sources */,
 				65F06F9E1BE814800074498D /* IScatterChartDataSet.swift in Sources */,
@@ -1369,6 +1375,7 @@
 				5BDFEF271D61F8E2000A869A /* LegendEntry.swift in Sources */,
 				5B9A0C291C83A7E200ED8ED8 /* AnimatedZoomViewJob.swift in Sources */,
 				65B3F6091C7370E5000983D0 /* ChartHighlighter.swift in Sources */,
+				4F95643B1DAEDAA60001456D /* XAxisAreaData.swift in Sources */,
 				5BE377EB1D44D6D0006EB34F /* ChartDataEntryBase.swift in Sources */,
 				5B9A0C261C83A7E200ED8ED8 /* ZoomViewJob.swift in Sources */,
 				65B3F60A1C7370E5000983D0 /* BarHighlighter.swift in Sources */,
@@ -1509,6 +1516,7 @@
 				5BDFEF261D61F8E2000A869A /* LegendEntry.swift in Sources */,
 				A52C5C741BAC5D1100594CDD /* AxisRendererBase.swift in Sources */,
 				A52C5C751BAC5D1100594CDD /* BarChartRenderer.swift in Sources */,
+				4F95643A1DAEDAA60001456D /* XAxisAreaData.swift in Sources */,
 				5BE377EA1D44D6D0006EB34F /* ChartDataEntryBase.swift in Sources */,
 				A52C5C761BAC5D1100594CDD /* BubbleChartRenderer.swift in Sources */,
 				A52C5C771BAC5D1100594CDD /* CandleStickChartRenderer.swift in Sources */,
