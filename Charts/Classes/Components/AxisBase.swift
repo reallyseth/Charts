@@ -41,6 +41,12 @@ public class AxisBase: ComponentBase
     public var drawGridLinesEnabled = true
     public var drawAxisLineEnabled = true
     
+    /// MAARK
+    public var drawGridAreasEnabled = true
+    public var filledAreaTopOffset: CGFloat = 0
+    public var axisLabelIsDate: Bool = false
+    public var dateFormatter: NSDateFormatter = NSDateFormatter()
+    
     /// flag that indicates of the labels of this axis should be drawn or not
     public var drawLabelsEnabled = true
     

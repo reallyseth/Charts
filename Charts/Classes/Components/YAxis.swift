@@ -41,6 +41,14 @@ public class YAxis: AxisBase
     /// indicates if the top y-label entry is drawn or not
     public var drawTopYLabelEntryEnabled = true
     
+    /// MAARK custom
+    public var onlyFormatSignificantLabels: Bool = false
+    public var useDataSetLabelForAxisLabel: Bool = false
+    public var dataSets: [IChartDataSet]?
+    public var hideLabels: Bool = false
+    public var drawTopBorder: Bool = false
+    public var topBorderColor: UIColor = UIColor.blackColor()
+    
     /// flag that indicates if the axis is inverted or not
     public var inverted = false
     
@@ -167,6 +175,30 @@ public class YAxis: AxisBase
         
         // calc actual range
         axisRange = abs(_axisMaximum - _axisMinimum)
+    }
+    
+    public override func getLongestLabel() -> String {
+        var longest = ""
+        
+        if hideLabels { return longest }
+        
+        if axisDependency == .Right && useDataSetLabelForAxisLabel {
+            guard let dataSets = self.dataSets else { return longest }
+            
+            for set in dataSets
+            {
+                guard let setLabel = set.label else { continue }
+                
+                if longest.characters.count < setLabel.characters.count
+                {
+                    longest = setLabel
+                }
+            }
+        } else {
+            longest = super.getLongestLabel()
+        }
+        
+        return longest
     }
     
     public var isDrawTopYLabelEntryEnabled: Bool { return drawTopYLabelEntryEnabled; }

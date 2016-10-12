@@ -137,6 +137,8 @@ public class RadarChartView: PieRadarChartViewBase
         drawDescription(context: context)
 
         drawMarkers(context: context)
+        
+        drawCallouts(context: context)
     }
 
     /// - returns: The factor that is needed to transform values into pixels.

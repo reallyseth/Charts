@@ -152,6 +152,9 @@ public class LineChartDataSet: LineRadarChartDataSet, ILineChartDataSet
     /// If true, drawing circles is enabled
     public var drawCirclesEnabled = true
     
+    public var drawSurroundingCircle = false
+    public var surroundingCircleColor = UIColor.blackColor()
+    
     /// - returns: `true` if drawing circles for this DataSet is enabled, `false` ifnot
     public var isDrawCirclesEnabled: Bool { return drawCirclesEnabled }
     

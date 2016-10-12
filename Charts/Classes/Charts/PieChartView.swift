@@ -120,6 +120,8 @@ public class PieChartView: PieRadarChartViewBase
         drawDescription(context: context)
         
         drawMarkers(context: context)
+        
+        drawCallouts(context: context)
     }
     
     internal override func calculateOffsets()
