@@ -8,6 +8,7 @@
 
 import UIKit
 
+@objc(ChartXAxisAreaData)
 public class XAxisAreaData: NSObject {
     
     public var startX = CGFloat(0)
