@@ -466,7 +466,7 @@ public class BarLineChartViewBase: ChartViewBase, BarLineScatterCandleBubbleChar
         var pt = callout.position
         
         if scaleX == 1 && scaleY == 1 && _viewPortHandler.transX == 0 && _viewPortHandler.transY == 0 {
-            getTransformer(.Left).pixelToValue(&pt)
+            getTransformer(.Left).pixelToValues(&pt)
             
             callout.valuePoint = pt
         } else {
@@ -634,9 +634,9 @@ public class BarLineChartViewBase: ChartViewBase, BarLineScatterCandleBubbleChar
                     location.y = -(self.bounds.size.height - location.y - _viewPortHandler.offsetBottom)
                 }
                 
-                let value = getValueByTouchPoint(pt: _viewPortHandler.contentCenter, axis: YAxis.AxisDependency.Left)
+                let value = valueForTouchPoint(pt: _viewPortHandler.contentCenter, axis: YAxis.AxisDependency.Left)
                 self.zoom(scaleX: isScaleXEnabled ? 1.4 : 1.0, scaleY: isScaleYEnabled ? 1.4 : 1.0, x: location.x, y: location.y)
-                self.zoomAndCenterViewAnimated(scaleX: 1, scaleY: 1, xIndex: value.x, yValue: Double(value.y), axis: YAxis.AxisDependency.Left, duration: 0.3)
+                self.zoomAndCenterViewAnimated(scaleX: 1, scaleY: 1, xValue: Double(value.x), yValue: Double(value.y), axis: YAxis.AxisDependency.Left, duration: 0.3)
             }
         }
     }

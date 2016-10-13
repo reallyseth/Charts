@@ -197,5 +197,5 @@ public class CombinedChartView: BarLineChartViewBase, CombinedChartDataProvider
     public var highlightFullBarEnabled: Bool = false
     
     /// - returns: `true` the highlight is be full-bar oriented, `false` ifsingle-value
-    public var isHighlightFullBarEnabled: Bool { return highlightFullBarEnabled }
+    public var isHighlightFullBarEnabled: Bool { return self.highlightFullBarEnabled }
 }

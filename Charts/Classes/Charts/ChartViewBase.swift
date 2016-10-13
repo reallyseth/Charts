@@ -640,7 +640,7 @@ public class ChartViewBase: NSUIView, ChartDataProvider, AnimatorDelegate
                 pos.x = _viewPortHandler.contentRect.origin.x + _viewPortHandler.contentRect.size.width - offset
             }
             
-            if !_viewPortHandler.isInBoundsBottom(pos.y, offset: offset) {
+            if !_viewPortHandler.isInBoundsBottom(pos.y + offset) {
                 pos.y = _viewPortHandler.chartHeight - offset - 20
             }
             
