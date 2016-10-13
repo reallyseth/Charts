@@ -613,7 +613,43 @@ public class BarChartRenderer: BarLineScatterCandleBubbleRenderer
                 
                 setHighlightDrawPos(highlight: high, barRect: barRect)
                 
+        
+                
                 CGContextFillRect(context, barRect)
+                
+                // MAARK
+                CGContextSetStrokeColorWithColor(context, set.highlightColor.CGColor)
+                CGContextSetLineWidth(context, set.highlightLineWidth)
+                if (set.highlightLineDashLengths != nil)
+                {
+                    CGContextSetLineDash(context, set.highlightLineDashPhase, set.highlightLineDashLengths!, set.highlightLineDashLengths!.count)
+                }
+                else
+                {
+                    CGContextSetLineDash(context, 0.0, nil, 0)
+                }
+                
+                let yValue = e.y
+                if (yValue.isNaN)
+                {
+                    continue
+                }
+                
+                if let safeAnimator = animator, safeViewPortHandler = viewPortHandler {
+                    let y = CGFloat(yValue) * CGFloat(safeAnimator.phaseY); // get the y-position
+                    
+                    var point = CGPoint(x: CGFloat(e.x), y: y)
+                    
+                    let trans = dataProvider.getTransformer(set.axisDependency)
+                    
+                    trans.pointValueToPixel(&point)
+                    
+                    CGContextBeginPath(context)
+                    CGContextMoveToPoint(context, point.x, safeViewPortHandler.contentTop)
+                    CGContextAddLineToPoint(context, point.x, safeViewPortHandler.contentBottom)
+                    CGContextStrokePath(context)
+                }
+                // END MAARK
             }
         }
         
