@@ -350,6 +350,53 @@ public class XAxisRenderer: AxisRendererBase
         }
     }
     
+    public func renderGridAreas(context context: CGContext)
+    {
+        guard let xAxis = self.axis as? XAxis, safeTransformer = transformer, safeViewPortHandler = viewPortHandler else { return }
+        
+        if (!xAxis.isDrawGridAreasEnabled || !xAxis.isEnabled)
+        {
+            return
+        }
+        
+        // New isDrawGridAreasEnabled property parallels isDrawGridLinesEnableld
+        
+        // xAxis.filledAreas is an array of ChartXAxisAreaData instances, a new class
+        // which has startX and endY properties
+        
+        if (!xAxis.isDrawGridAreasEnabled || !xAxis.isEnabled || xAxis.filledAreas.count == 0)
+        {
+            return
+        }
+        
+        CGContextSaveGState(context)
+        
+        var position = CGPoint(x: 0.0, y: 0.0)
+        var endPosition = CGPoint(x: 0.0, y: 0.0)
+        let valueToPixelMatrix = safeTransformer.valueToPixelMatrix
+        
+        // Iterate through filled areas
+        for areaData in xAxis.filledAreas {
+            // Get start position
+            position.x = CGFloat(areaData.startX)
+            position = CGPointApplyAffineTransform(position, valueToPixelMatrix)
+            // Get end position
+            endPosition.x = CGFloat(areaData.endX)
+            endPosition = CGPointApplyAffineTransform(endPosition, valueToPixelMatrix)
+            // Draw rectangle
+            let rectangle = CGRect(x: position.x, y: safeViewPortHandler.contentTop, width: CGFloat(endPosition.x-position.x), height: safeViewPortHandler.contentBottom)
+            let color = areaData.color;
+            CGContextSetFillColorWithColor(context, color.CGColor)
+            CGContextSetStrokeColorWithColor(context, color.CGColor)
+            CGContextSetLineWidth(context, 1)
+            CGContextAddRect(context, rectangle)
+            CGContextDrawPath(context, .FillStroke)
+        }
+        
+        CGContextRestoreGState(context)
+        
+    }
+    
     public override func renderLimitLines(context context: CGContext)
     {
         guard let

@@ -182,6 +182,8 @@ public class AxisBase: ComponentBase
     
     public var isDrawGridLinesEnabled: Bool { return drawGridLinesEnabled; }
     
+    public var isDrawGridAreasEnabled: Bool { return drawGridAreasEnabled; }
+    
     public var isDrawAxisLineEnabled: Bool { return drawAxisLineEnabled; }
     
     public var isDrawLabelsEnabled: Bool { return drawLabelsEnabled; }
