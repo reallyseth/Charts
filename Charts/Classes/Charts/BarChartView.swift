@@ -149,6 +149,13 @@ public class BarChartView: BarLineChartViewBase, BarChartDataProvider
     /// **default**: false
     public var fitBars = false
     
+    /// Set this to `true` to make the highlight operation full-bar oriented, `false` to make it highlight single values (relevant only for stacked).
+    /// If enabled, highlighting operations will highlight the whole bar, even if only a single stack entry was tapped.
+    public var highlightFullBarEnabled: Bool = false
+    
+    /// - returns: `true` the highlight is be full-bar oriented, `false` ifsingle-value
+    public var isHighlightFullBarEnabled: Bool { return highlightFullBarEnabled }
+    
     // MARK: - BarChartDataProbider
     
     public var barData: BarChartData? { return _data as? BarChartData }

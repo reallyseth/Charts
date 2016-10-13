@@ -576,11 +576,6 @@ public class ChartViewBase: NSUIView, ChartDataProvider, AnimatorDelegate
                 }
                 else
                 {
-                    if self is BarLineChartViewBase &&
-                        (self as! BarLineChartViewBase).isHighlightFullBarEnabled {
-                        h = Highlight(x: h!.x, y: Double.NaN, xPx: CGFloat.NaN, yPx: CGFloat.NaN, dataIndex: -1, dataSetIndex: -1, stackIndex: -1, axis: YAxis.AxisDependency.Left)
-                    }
-                    
                     _indicesToHighlight = [h!]
                 }
             }
